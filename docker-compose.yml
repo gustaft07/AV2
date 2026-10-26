@@ -1,0 +1,36 @@
+# OPCIONAL: o Docker serve apenas para subir o MySQL sem instalá-lo. Se você já tem um MySQL 8
+# instalado, ignore este arquivo e ajuste o DATABASE_URL no .env.
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: greencode
+      MYSQL_DATABASE: greencode
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -pgreencode --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Opcional: `docker compose --profile full up -d --build` sobe também a API.
+  api:
+    profiles: ["full"]
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://root:greencode@db:3306/greencode
+      JWT_SECRET: troque-este-segredo-em-producao
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysqldata:

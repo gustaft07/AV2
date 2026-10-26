@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Os valores dos enums são idênticos aos do domínio da AV1 (core/validation.ts e Papel.ts).
+
+enum Papel {
+  admin
+  operador_cadastro
+  gestor_almoxarifado
+  auditor
+}
+
+enum EstadoFisico {
+  novo
+  seminovo
+  usado_bom
+  usado_regular
+  usado_ruim
+  sucata
+}
+
+enum StatusEquipamento {
+  recebido
+  triagem
+  triagem_completa
+  desmonte
+  reciclagem
+  descarte_seguro
+  revenda
+}
+
+// ---------------------------------------------------------------------------------------------
+// Política de exclusão (professor):
+//   SOFT DELETE (campo "ativo")  -> Usuario, Organizacao, Lote   (inativar em cadeia + reativar)
+//   DELETE FÍSICO                -> Equipamento, Contrato (e, via "exclusão definitiva", os demais)
+// A exclusão física é em cascata no próprio banco (onDelete: Cascade).
+// Equipamentos NÃO têm soft delete: ficam inativos por herança quando o lote/organização está inativo.
+// ---------------------------------------------------------------------------------------------
+
+model Usuario {
+  id        String   @id @default(uuid())
+  criadoEm  DateTime @default(now())
+  login     String   @unique
+  hashSenha String
+  saltSenha String
+  papel     Papel
+  ativo     Boolean  @default(true) // soft delete
+  versao    Int      @default(1)
+}
+
+model Organizacao {
+  id                     String    @id @default(uuid())
+  criadoEm               DateTime  @default(now())
+  codigo                 String    @unique
+  razaoSocial            String    @db.VarChar(255)
+  cnpj                   String    @unique // somente os 14 dígitos
+  prazoArmazenamentoDias Int       @default(90)
+  ativo                  Boolean   @default(true) // soft delete (inativar propaga para os lotes)
+  contrato               Contrato? // 1 : 0..1
+  lotes                  Lote[]
+  versao                 Int       @default(1)
+}
+
+// Na AV1 o contrato era o texto "contratoColeta". Só existe exclusão física; portanto
+// "contrato ativo" = contrato existente (não há contrato "inativo").
+model Contrato {
+  id            String      @id @default(uuid())
+  criadoEm      DateTime    @default(now())
+  numero        String      @unique // = contratoColeta da AV1
+  organizacaoId String      @unique // @unique garante o relacionamento 1 : 0..1
+  organizacao   Organizacao @relation(fields: [organizacaoId], references: [id], onDelete: Cascade)
+}
+
+model Lote {
+  id             String            @id @default(uuid())
+  criadoEm       DateTime          @default(now())
+  codigoLote     String            @unique
+  notaFiscal     String
+  transportadora String
+  dataEntrada    DateTime
+  // Derivado dos equipamentos: só muda quando TODOS compartilham o mesmo status (nunca é editado à mão).
+  status         StatusEquipamento @default(recebido)
+  ativo          Boolean           @default(true) // soft delete
+  organizacaoId  String
+  organizacao    Organizacao       @relation(fields: [organizacaoId], references: [id], onDelete: Cascade)
+  equipamentos   Equipamento[]
+  versao         Int               @default(1)
+
+  @@index([organizacaoId])
+  @@index([dataEntrada])
+}
+
+model Equipamento {
+  id                  String            @id @default(uuid())
+  criadoEm            DateTime          @default(now())
+  // Gerado pelo sistema e SEMPRE igual ao id (constraint em constraints.sql). Mantido como coluna
+  // própria porque o enunciado pede unicidade em "codigoBarrasInterno".
+  codigoBarrasInterno String            @unique
+  // Posição no lote: sequencial automática (1, 2, 3...), atribuída ao cadastrar. Não é reaproveitada.
+  posicao             Int
+  tipo                String
+  estadoFisico        EstadoFisico
+  status              StatusEquipamento @default(recebido)
+  loteId              String
+  lote                Lote              @relation(fields: [loteId], references: [id], onDelete: Cascade)
+  historicoEstado     HistoricoEstado[]
+  movimentacoes       Movimentacao[]
+  versao              Int               @default(1)
+
+  @@unique([loteId, posicao])
+  @@index([status])
+  @@index([estadoFisico])
+}
+
+// Na AV1 era um array dentro do equipamento (historicoEstado); normalizado em tabela própria.
+model HistoricoEstado {
+  id            String       @id @default(uuid())
+  equipamentoId String
+  equipamento   Equipamento  @relation(fields: [equipamentoId], references: [id], onDelete: Cascade)
+  de            EstadoFisico
+  para          EstadoFisico
+  justificativa String?      @db.VarChar(500)
+  em            DateTime     @default(now())
+
+  @@index([equipamentoId, em])
+}
+
+model Movimentacao {
+  id            String      @id @default(uuid())
+  criadoEm      DateTime    @default(now())
+  equipamentoId String
+  equipamento   Equipamento @relation(fields: [equipamentoId], references: [id], onDelete: Cascade)
+  tipo          String // cadastro | alteracao_estado_fisico | alteracao_status
+  ator          String // login de quem executou (como na AV1)
+  observacao    String?     @db.VarChar(1000)
+
+  @@index([equipamentoId, criadoEm])
+}
