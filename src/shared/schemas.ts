@@ -23,11 +23,10 @@ export const situacaoQuery = {
   },
 } as const;
 
-/** Equipamento novo: código de barras e posição no lote são gerados pelo sistema. */
 export const equipamentoNovoSchema = {
   type: 'object',
   required: ['tipo', 'estadoFisico'],
-  additionalProperties: false, // campos extras (ex.: um codigoBarrasInterno enviado por engano) são ignorados
+  additionalProperties: false,
   properties: {
     tipo: { type: 'string', minLength: 1, maxLength: 60 },
     estadoFisico: { type: 'string', enum: ENUM_ESTADO_FISICO },

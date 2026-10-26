@@ -1,11 +1,5 @@
 import { Papel } from '../domain/Papel';
 
-/**
- * Matriz de permissões em um único lugar (regras do professor para a AV2):
- *  - rotas e LISTAGENS bloqueadas por papel: cada papel só enxerga o que gerencia (o auditor consulta tudo);
- *  - ADMIN tem acesso a TODAS as rotas, mas seu foco é a gestão de usuários;
- *  - operadores NÃO acessam recursos administrativos (ex.: listagem de usuários).
- */
 export const PERMISSOES = {
   // Usuários (recurso administrativo)
   lerUsuarios: [Papel.ADMIN, Papel.AUDITOR],

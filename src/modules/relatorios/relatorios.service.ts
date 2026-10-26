@@ -6,7 +6,6 @@ const DIA_MS = 24 * 60 * 60 * 1000;
 export class RelatoriosService {
   constructor(private prisma: PrismaClient) {}
 
-  /** Considera apenas dados ATIVOS (soft delete): lotes ativos e os equipamentos desses lotes. */
   async resumo() {
     const doLoteAtivo = { lote: { ativo: true } };
     const [organizacoes, lotes, equipamentos, lotesPorStatus, porStatus, porEstado] = await Promise.all([
@@ -25,10 +24,6 @@ export class RelatoriosService {
     };
   }
 
-  /**
-   * Lotes ativos (de organizações ativas) que ainda têm equipamentos sem destinação final
-   * (reciclagem, descarte_seguro ou revenda), comparando data de entrada + prazoArmazenamentoDias com hoje.
-   */
   async prazoArmazenamento(somenteVencidos: boolean) {
     const agora = Date.now();
     const lotes = await this.prisma.lote.findMany({

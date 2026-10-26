@@ -4,18 +4,15 @@ import { AppError } from '../shared/errors';
 import { ErroValidacao } from '../core/validation';
 
 export default fp(async (app) => {
-  app.setErrorHandler((error: any, req, reply) => {
-    // regras de domínio da AV1 (CNPJ, data de entrada, justificativa, desmonte...) -> 422
+  app.setErrorHandler((error: any, req, reply) => {2
     if (error instanceof ErroValidacao) {
       return reply.code(422).send({ message: error.message });
     }
 
-    // erros HTTP de negócio
     if (error instanceof AppError) {
       return reply.code(error.statusCode).send({ message: error.message });
     }
 
-    // erros conhecidos do Prisma
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {
         case 'P2002': {
@@ -30,12 +27,10 @@ export default fp(async (app) => {
       }
     }
 
-    // validação do JSON Schema (Fastify/Ajv)
     if (error.validation) {
       return reply.code(400).send({ message: 'Requisição inválida', detalhes: error.validation });
     }
 
-    // outros erros 4xx gerados pelo próprio Fastify (ex.: JSON malformado)
     if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
       return reply.code(error.statusCode).send({ message: error.message });
     }

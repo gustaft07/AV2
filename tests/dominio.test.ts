@@ -17,10 +17,8 @@ test('código de barras é gerado automaticamente e é igual ao id', () => {
   const e = FabricaEntidades.criarEquipamento({ loteId: 'L1', tipo: 'Notebook', estadoFisico: 'novo' });
   assert.equal(e.codigoBarras, e.id);
   assert.match(e.id, /^[0-9a-f-]{36}$/);
-  // dois equipamentos nunca compartilham o código
   const outro = FabricaEntidades.criarEquipamento({ loteId: 'L1', tipo: 'Notebook', estadoFisico: 'novo' });
   assert.notEqual(e.codigoBarras, outro.codigoBarras);
-  // o CLI da AV1 ainda pode informar o código manualmente
   assert.equal(novoEquip().codigoBarras, 'EQ-1');
 });
 
@@ -36,14 +34,14 @@ test('rebaixar 2+ categorias exige justificativa (ErroValidacao -> 422 na API)',
 
 test('fluxo de status: desmonte só após triagem_completa', () => {
   const e = novoEquip();
-  assert.throws(() => e.alterarStatus('desmonte'), ErroValidacao); // recebido -> desmonte
-  assert.throws(() => e.alterarStatus('reciclagem'), ErroValidacao); // pulou etapas
+  assert.throws(() => e.alterarStatus('desmonte'), ErroValidacao); 
+  assert.throws(() => e.alterarStatus('reciclagem'), ErroValidacao); 
   e.alterarStatus('triagem');
   e.alterarStatus('triagem_completa');
   e.alterarStatus('desmonte');
   e.alterarStatus('reciclagem');
   assert.equal(e.status, 'reciclagem');
-  assert.throws(() => e.alterarStatus('triagem'), ErroValidacao); // estado final
+  assert.throws(() => e.alterarStatus('triagem'), ErroValidacao); 
 });
 
 test('deJSON/paraJSON preservam os dados', () => {

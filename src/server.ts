@@ -6,10 +6,9 @@ async function main() {
 
   const shutdown = async (signal: string) => {
     app.log.info(`${signal} recebido, encerrando...`);
-    const force = setTimeout(() => process.exit(1), 10_000); // trava de segurança
+    const force = setTimeout(() => process.exit(1), 10_000); 
     force.unref();
     try {
-      // para de aceitar conexões, aguarda as ativas e executa os hooks onClose (desconecta o Prisma)
       await app.close();
       process.exit(0);
     } catch (err) {
@@ -18,7 +17,6 @@ async function main() {
     }
   };
 
-  // No Windows, SIGINT (Ctrl+C) funciona; SIGTERM tem suporte limitado. Mantemos ambos.
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
 

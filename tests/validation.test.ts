@@ -24,7 +24,7 @@ test('data de entrada: não pode ser futura nem ter mais de 90 dias', () => {
 test('justificativa só é exigida ao rebaixar 2+ categorias', () => {
   assert.equal(exigeJustificativa('novo', 'seminovo'), false);
   assert.equal(exigeJustificativa('novo', 'usado_bom'), true);
-  assert.equal(exigeJustificativa('usado_ruim', 'novo'), false); // melhorar não exige
+  assert.equal(exigeJustificativa('usado_ruim', 'novo'), false);
 });
 
 test('desmonte só a partir de triagem_completa', () => {

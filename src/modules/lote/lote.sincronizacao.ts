@@ -3,11 +3,6 @@ import { statusUnico } from '../../domain/statusLote';
 import { EquipamentoRepository } from '../equipamento/equipamento.repository';
 import { LoteRepository } from './lote.repository';
 
-/**
- * Regra do professor: o lote só muda de status quando TODOS os equipamentos dele têm o mesmo status.
- * Deve ser chamada dentro de uma transação READ COMMITTED, DEPOIS de `loteRepo.travar(...)`,
- * para enxergar as alterações já confirmadas por outras requisições.
- */
 export async function sincronizarStatusDoLote(
   db: Db,
   loteId: string,

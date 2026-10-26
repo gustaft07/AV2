@@ -4,16 +4,12 @@ import { Equipamento } from '../../domain/Equipamento';
 import type { EstadoFisico, StatusEquipamento } from '../../core/validation';
 
 export class EquipamentoRepository {
-  /**
-   * Entidade de domínio -> linha. O código de barras é gerado pelo sistema e é SEMPRE o id
-   * (a entidade já nasce assim); a posição no lote é sequencial e informada por quem chama.
-   */
   criarVarios(db: Db, itens: { equipamento: Equipamento; posicao: number }[]) {
     return db.equipamento.createMany({
       data: itens.map(({ equipamento: e, posicao }) => ({
         id: e.id,
         criadoEm: new Date(e.criadoEm),
-        codigoBarrasInterno: e.id, // código de barras == id
+        codigoBarrasInterno: e.id, 
         posicao,
         tipo: e.tipo,
         estadoFisico: e.estadoFisico,
@@ -23,19 +19,16 @@ export class EquipamentoRepository {
     });
   }
 
-  /** Próxima posição livre do lote (1, 2, 3...). Chamar com o lote travado (loteRepo.travar). */
   async proximaPosicao(db: Db, loteId: string): Promise<number> {
     const r = await db.equipamento.aggregate({ where: { loteId }, _max: { posicao: true } });
     return (r._max.posicao ?? 0) + 1;
   }
 
-  /** Status de todos os equipamentos do lote (entrada da regra "todos iguais"). */
   async statusDosEquipamentos(db: Db, loteId: string): Promise<StatusEquipamento[]> {
     const linhas = await db.equipamento.findMany({ where: { loteId }, select: { status: true } });
     return linhas.map((l) => l.status);
   }
 
-  /** Linha do banco -> entidade de domínio, para reaproveitar as regras da AV1. */
   paraDominio(row: {
     id: string; criadoEm: Date; codigoBarrasInterno: string; loteId: string; tipo: string;
     estadoFisico: EstadoFisico; status: StatusEquipamento;
@@ -48,7 +41,7 @@ export class EquipamentoRepository {
       tipo: row.tipo,
       estadoFisico: row.estadoFisico,
       status: row.status,
-      historicoEstado: [], // o domínio só acrescenta; o histórico completo fica na tabela HistoricoEstado
+      historicoEstado: [],
     });
   }
 
@@ -103,7 +96,6 @@ export class EquipamentoRepository {
     return db.historicoEstado.create({ data: { equipamentoId, ...h } });
   }
 
-  /** DELETE FÍSICO direto (histórico e movimentações caem em cascata). */
   remover(db: Db, id: string) {
     return db.equipamento.delete({ where: { id } });
   }

@@ -16,4 +16,4 @@ export class NotFoundError extends AppError {
 export class ConflictError extends AppError {
   constructor(message = 'Conflito') { super(message, 409); }
 }
-// Regras de negócio do domínio usam ErroValidacao (src/core/validation.ts) -> 422 no error-handler.
+

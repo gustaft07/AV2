@@ -28,12 +28,9 @@ export default fp(async (app) => {
     try {
       await req.jwtVerify();
     } catch {
-      // lançar o erro interrompe a cadeia de hooks; o error-handler formata a resposta 401
       throw new UnauthorizedError('Token ausente ou inválido');
     }
 
-    // Soft delete de usuários vale na hora: conta inativada/excluída perde o acesso mesmo com token ainda válido,
-    // e mudanças de papel também passam a valer imediatamente (usa o papel atual do banco, não o do token).
     const usuario = await app.prisma.usuario.findUnique({
       where: { id: req.user.sub },
       select: { ativo: true, papel: true },

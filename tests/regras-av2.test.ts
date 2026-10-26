@@ -7,9 +7,9 @@ import { Papel } from '../src/domain/Papel';
 
 test('status do lote: só muda quando TODOS os equipamentos têm o mesmo status', () => {
   assert.equal(statusUnico(['triagem', 'triagem', 'triagem']), 'triagem');
-  assert.equal(statusUnico(['triagem', 'recebido', 'triagem']), null); // um atrasado: lote não muda
+  assert.equal(statusUnico(['triagem', 'recebido', 'triagem']), null); 
   assert.equal(statusUnico(['triagem']), 'triagem');
-  assert.equal(statusUnico([]), null); // lote vazio mantém o status
+  assert.equal(statusUnico([]), null); 
 });
 
 test('soft delete: filtros de situação (ativos por padrão)', () => {

@@ -1,4 +1,4 @@
-# Da AV1 (CLI) para a AV2 (API) — e as respostas do professor
+# Da AV1 (CLI) para a AV2 (API)
 
 ## 1. O que veio da AV1 sem mudar
 - `src/core/validation.ts`: `validarCNPJ`, `validarDataEntradaLote`, escala de estado físico, status do equipamento, `validarTransicaoParaDesmonte`, `ErroValidacao`.

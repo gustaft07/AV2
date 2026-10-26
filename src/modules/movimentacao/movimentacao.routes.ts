@@ -8,7 +8,6 @@ import { paginacaoQuery } from '../../shared/pagination';
 const routes: FastifyPluginAsync = async (app) => {
   const c = new MovimentacaoController(app);
 
-  // Movimentações são imutáveis: nascem como efeito de cadastro/alteração de equipamento (trilha de auditoria).
   app.get('/movimentacoes', {
     onRequest: [app.authenticate, authorize(PERMISSOES.lerAlmoxarifado)],
     schema: {

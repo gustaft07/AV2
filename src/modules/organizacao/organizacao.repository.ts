@@ -3,7 +3,6 @@ import type { Db } from '../../shared/db';
 import type { Organizacao } from '../../domain/Organizacao';
 
 export class OrganizacaoRepository {
-  /** Persiste a entidade de domínio; contratoColeta (texto da AV1) vira a linha de Contrato. */
   criar(db: Db, o: Organizacao) {
     return db.organizacao.create({
       data: {
@@ -57,12 +56,11 @@ export class OrganizacaoRepository {
     });
   }
 
-  /** DELETE FÍSICO do contrato (direto, sem soft delete e sem restrições). */
   removerContrato(db: Db, organizacaoId: string) {
     return db.contrato.delete({ where: { organizacaoId } });
   }
 
   remover(db: Db, id: string) {
-    return db.organizacao.delete({ where: { id } }); // contrato, lotes, equipamentos... caem em cascata
+    return db.organizacao.delete({ where: { id } }); 
   }
 }

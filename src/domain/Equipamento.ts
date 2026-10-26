@@ -30,7 +30,7 @@ export class Equipamento extends EntidadeBase {
   constructor(dados: {
     id?: string;
     criadoEm?: string;
-    codigoBarras?: string; // AV2: opcional; por padrão é o próprio id (gerado automaticamente)
+    codigoBarras?: string; 
     loteId: string;
     tipo: string;
     estadoFisico: EstadoFisico;
@@ -38,7 +38,7 @@ export class Equipamento extends EntidadeBase {
     historicoEstado?: EquipamentoJSON["historicoEstado"];
   }) {
     super(dados.id, dados.criadoEm);
-    this.codigoBarras = dados.codigoBarras ?? this.id; // AV2: o código de barras é o id do equipamento
+    this.codigoBarras = dados.codigoBarras ?? this.id;
     this.loteId = dados.loteId;
     this.tipo = dados.tipo;
     this.estadoFisico = dados.estadoFisico;
@@ -54,7 +54,6 @@ export class Equipamento extends EntidadeBase {
   alterarEstadoFisico(novoEstado: EstadoFisico, justificativa?: string): void {
     const precisaJustificar = exigeJustificativa(this.estadoFisico, novoEstado);
     if (precisaJustificar && (!justificativa || justificativa.trim().length < 5)) {
-      // AV1 lançava `Error`; trocado por ErroValidacao (subclasse de Error) para a API responder 422.
       throw new ErroValidacao(
         `Justificativa textual obrigatória (mín. 5 caracteres) ao rebaixar de ` +
           `"${this.estadoFisico}" para "${novoEstado}" (queda de 2+ categorias).`
@@ -74,7 +73,6 @@ export class Equipamento extends EntidadeBase {
     this.status = "desmonte";
   }
 
-  /** Acréscimo da AV2: troca de status para a API. "desmonte" continua usando a regra da AV1. */
   alterarStatus(novoStatus: StatusEquipamento): void {
     if (novoStatus === "desmonte") {
       this.moverParaDesmonte();

@@ -32,7 +32,7 @@ export class FabricaEntidades {
   }
 
   static criarEquipamento(dados: {
-    codigoBarras?: string; // AV2: omitido => igual ao id do equipamento
+    codigoBarras?: string; 
 
     loteId: string;
     tipo: string;

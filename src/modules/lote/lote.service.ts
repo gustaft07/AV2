@@ -29,7 +29,6 @@ export interface CriarLoteInput {
 
 const READ_COMMITTED = { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted };
 
-/** O código de barras (= id) é gerado pela própria entidade; a fábrica da AV1 valida tipo e demais campos. */
 function montarEquipamentos(itens: NovoEquipamento[], loteId: string): Equipamento[] {
   return itens.map((i) =>
     FabricaEntidades.criarEquipamento({ loteId, tipo: i.tipo.trim(), estadoFisico: i.estadoFisico }),
@@ -54,12 +53,6 @@ export class LoteService {
     }));
   }
 
-  /**
-   * Registra o lote (regras da AV1: nota fiscal, transportadora, data de entrada não futura e com no
-   * máximo 90 dias) e, opcionalmente, seus equipamentos. Tudo ou nada.
-   * REGRA DO PROFESSOR: só aceita organização ATIVA e COM CONTRATO (contrato existente = contrato ativo).
-   * Código de barras (= id) e posição (1, 2, 3...) dos equipamentos são gerados automaticamente.
-   */
   async criar(input: CriarLoteInput, ator: Ator) {
     const lote = FabricaEntidades.criarLote({
       codigoLote: input.codigoLote.trim(),
@@ -114,12 +107,10 @@ export class LoteService {
     return lote;
   }
 
-  /** Cadastra equipamentos em lote ativo. A posição continua a sequência do lote (sem reaproveitar posições). */
   async adicionarEquipamentos(id: string, itens: NovoEquipamento[], ator: Ator) {
     const equipamentos = montarEquipamentos(itens, id);
 
     return this.prisma.$transaction(async (tx) => {
-      // trava o lote primeiro: serializa a atribuição de posições e a sincronização do status
       if (!(await this.repo.travar(tx, id))) throw new NotFoundError('Lote não encontrado');
       const lote = await this.repo.findById(tx, id);
       if (!lote) throw new NotFoundError('Lote não encontrado');
@@ -135,7 +126,6 @@ export class LoteService {
     }, READ_COMMITTED);
   }
 
-  /** O status do lote NÃO é editável: é derivado dos equipamentos. Só nota fiscal e transportadora. */
   async atualizar(id: string, input: { notaFiscal?: string; transportadora?: string; versao: number }) {
     const atual = await this.repo.findById(this.prisma, id);
     if (!atual) throw new NotFoundError('Lote não encontrado');
@@ -152,15 +142,12 @@ export class LoteService {
     return this.repo.findCompleto(this.prisma, id);
   }
 
-  /** SOFT DELETE: os equipamentos do lote ficam inativos por herança. */
   async inativar(id: string) {
     const atual = await this.repo.findById(this.prisma, id);
     if (!atual) throw new NotFoundError('Lote não encontrado');
     if (!atual.ativo) throw new ConflictError('Lote já está inativo');
     return this.repo.definirAtivo(this.prisma, id, false);
   }
-
-  /** Só reativa se a organização estiver ativa (senão haveria lote ativo em organização inativa). */
   async reativar(id: string) {
     const atual = await this.repo.findById(this.prisma, id);
     if (!atual) throw new NotFoundError('Lote não encontrado');
@@ -171,7 +158,6 @@ export class LoteService {
     return this.repo.definirAtivo(this.prisma, id, true);
   }
 
-  /** DELETE FÍSICO (delete padrão), em cascata: equipamentos, histórico e movimentações. */
   async removerDefinitivo(id: string) {
     const atual = await this.repo.findById(this.prisma, id);
     if (!atual) throw new NotFoundError('Lote não encontrado');

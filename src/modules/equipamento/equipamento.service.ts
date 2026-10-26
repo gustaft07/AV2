@@ -19,7 +19,6 @@ export interface FiltrosEquipamento extends Paginacao {
   situacao?: Situacao;
 }
 
-// READ COMMITTED: cada leitura enxerga o que já foi confirmado por outras transações (base da sincronização do lote)
 const READ_COMMITTED = { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted };
 
 const descreve = (de: string, para: string, extra?: string) =>
@@ -45,7 +44,6 @@ export class EquipamentoService {
         { tipo: { contains: f.busca } },
       ];
     }
-    // equipamento não tem soft delete próprio: é inativo quando o lote está inativo
     const ativo = filtroAtivo(f.situacao);
     if (ativo !== undefined) where.lote = { ativo };
 
@@ -69,11 +67,6 @@ export class EquipamentoService {
     return respostaPaginada(data, total, p);
   }
 
-  /**
-   * Alteração de estado físico usando a regra da AV1 (Equipamento.alterarEstadoFisico):
-   * queda de 2+ categorias exige justificativa de pelo menos 5 caracteres.
-   * Estado + histórico + movimentação são gravados juntos (tudo ou nada).
-   */
   async alterarEstadoFisico(
     id: string,
     input: { novoEstado: EstadoFisico; justificativa?: string; versao: number },
@@ -113,11 +106,6 @@ export class EquipamentoService {
     });
   }
 
-  /**
-   * Alteração de status. "desmonte" só a partir de "triagem_completa" (regra da AV1).
-   * Depois da troca, o status do LOTE é sincronizado: só muda quando TODOS os equipamentos
-   * do lote tiverem o mesmo status (regra do professor).
-   */
   async alterarStatus(
     id: string,
     input: { novoStatus: StatusEquipamento; versao: number; observacao?: string },
@@ -130,7 +118,7 @@ export class EquipamentoService {
 
       const equip = this.repo.paraDominio(row);
       const anterior = equip.status;
-      equip.alterarStatus(input.novoStatus); // lança ErroValidacao se a transição for inválida
+      equip.alterarStatus(input.novoStatus);
 
       const afetadas = await this.repo.atualizarStatusComVersao(tx, id, input.versao, equip.status);
       if (afetadas === 0) {
@@ -151,10 +139,6 @@ export class EquipamentoService {
     }, READ_COMMITTED);
   }
 
-  /**
-   * DELETE FÍSICO direto (sem soft delete): remove o equipamento, seu histórico e suas movimentações.
-   * A posição dele no lote não é reaproveitada. O status do lote é recalculado com os equipamentos restantes.
-   */
   async remover(id: string) {
     await this.prisma.$transaction(async (tx) => {
       const row = await this.repo.findBasico(tx, id);

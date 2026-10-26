@@ -11,9 +11,6 @@ const routes: FastifyPluginAsync = async (app) => {
   const leitura = [app.authenticate, authorize(PERMISSOES.lerAlmoxarifado)];
   const escrita = [app.authenticate, authorize(PERMISSOES.gerirAlmoxarifado)];
 
-  // Equipamentos são cadastrados dentro de um lote: POST /lotes e POST /lotes/:id/equipamentos.
-  // O código de barras (= id) e a posição no lote são gerados pelo sistema.
-
   app.get('/equipamentos', {
     onRequest: leitura,
     schema: {

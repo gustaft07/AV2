@@ -14,7 +14,7 @@ const path = require('path');
 const raiz = path.join(__dirname, '..');
 const pastaMigracoes = path.join(raiz, 'prisma', 'migrations');
 const arquivoConstraints = path.join(raiz, 'prisma', 'constraints.sql');
-const MARCADOR = 'organizacao_cnpj_formato_chk'; // nome de uma constraint, para detectar anexo anterior
+const MARCADOR = 'organizacao_cnpj_formato_chk';
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);

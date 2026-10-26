@@ -27,13 +27,12 @@ export class UsuarioService {
   ) {}
 
   async criar(input: CriarUsuarioInput) {
-    // a fábrica valida login/papel e gera hash+sal exatamente como no CLI
     const usuario = FabricaEntidades.criarUsuario({
       login: input.login.trim(),
       senha: input.senha,
       papel: input.papel,
     });
-    return this.repo.criar(this.prisma, usuario); // login duplicado -> 409 (UNIQUE)
+    return this.repo.criar(this.prisma, usuario); 
   }
 
   async listar(f: Paginacao & { situacao?: Situacao }) {
@@ -73,7 +72,6 @@ export class UsuarioService {
     return this.repo.findById(this.prisma, id);
   }
 
-  /** SOFT DELETE: o usuário deixa de autenticar, mas a conta e o histórico (campo ator) são preservados. */
   async inativar(id: string, ator: Ator) {
     if (id === ator.usuarioId) throw new ConflictError('Você não pode inativar a própria conta');
     const atual = await this.buscar(id);
@@ -87,7 +85,6 @@ export class UsuarioService {
     return this.repo.definirAtivo(this.prisma, id, true);
   }
 
-  /** Exclusão física (delete padrão). As movimentações guardam só o login, então o histórico permanece. */
   async removerDefinitivo(id: string, ator: Ator) {
     if (id === ator.usuarioId) throw new ConflictError('Você não pode excluir a própria conta');
     await this.buscar(id);

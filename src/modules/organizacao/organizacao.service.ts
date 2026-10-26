@@ -30,7 +30,6 @@ export class OrganizacaoService {
   ) {}
 
   async criar(input: CriarOrganizacaoInput) {
-    // validações da AV1 (código e razão social obrigatórios, CNPJ válido) via fábrica
     const org = FabricaEntidades.criarOrganizacao({
       codigo: input.codigo.trim(),
       razaoSocial: input.razaoSocial.trim(),
@@ -38,7 +37,7 @@ export class OrganizacaoService {
       contratoColeta: input.contratoColeta?.trim() ?? '',
       prazoArmazenamentoDias: input.prazoArmazenamentoDias,
     });
-    return this.repo.criar(this.prisma, org); // código/CNPJ/contrato duplicados -> 409 (UNIQUE)
+    return this.repo.criar(this.prisma, org); 
   }
 
   async listar(f: Paginacao & { busca?: string; situacao?: Situacao }) {
@@ -58,7 +57,6 @@ export class OrganizacaoService {
     return respostaPaginada(data, total, f);
   }
 
-  /** Registros inativos "não existem" para a consulta padrão (404) — use ?situacao=todos para vê-los. */
   async obter(id: string, situacao: Situacao = 'ativos') {
     const org = await this.repo.findById(this.prisma, id);
     if (!org || !compativelComSituacao(org.ativo, situacao)) {
@@ -77,7 +75,6 @@ export class OrganizacaoService {
       const prazo = input.prazoArmazenamentoDias ?? atual.prazoArmazenamentoDias;
       const contratoColeta = input.contratoColeta?.trim() ?? atual.contrato?.numero ?? '';
 
-      // revalida o resultado pelas regras do domínio
       FabricaEntidades.criarOrganizacao({
         codigo: atual.codigo, razaoSocial, cnpj: atual.cnpj, contratoColeta, prazoArmazenamentoDias: prazo,
       });
@@ -95,11 +92,6 @@ export class OrganizacaoService {
     });
   }
 
-  /**
-   * SOFT DELETE em cadeia: inativa a organização e todos os seus lotes.
-   * Os equipamentos ficam inativos por herança (não têm soft delete próprio).
-   * Não há restrição por contrato ativo: a organização pode ser inativada mesmo com contrato.
-   */
   async inativar(id: string) {
     return this.prisma.$transaction(async (tx) => {
       const atual = await this.repo.findById(tx, id);
@@ -112,7 +104,6 @@ export class OrganizacaoService {
     });
   }
 
-  /** Reativa somente a organização; lotes inativados em cadeia precisam ser reativados um a um. */
   async reativar(id: string) {
     const atual = await this.repo.findById(this.prisma, id);
     if (!atual) throw new NotFoundError('Organização não encontrada');
@@ -120,14 +111,12 @@ export class OrganizacaoService {
     return this.repo.definirAtivo(this.prisma, id, true);
   }
 
-  /** DELETE FÍSICO (delete padrão), em cascata: contrato, lotes, equipamentos, histórico e movimentações. */
   async removerDefinitivo(id: string) {
     const atual = await this.repo.findById(this.prisma, id);
     if (!atual) throw new NotFoundError('Organização não encontrada');
     await this.repo.remover(this.prisma, id);
   }
 
-  /** DELETE FÍSICO direto do contrato. Sem contrato, a organização deixa de poder receber novos lotes. */
   async removerContrato(id: string) {
     const atual = await this.repo.findById(this.prisma, id);
     if (!atual) throw new NotFoundError('Organização não encontrada');

@@ -4,7 +4,6 @@ import type { Lote } from '../../domain/Lote';
 import type { StatusEquipamento } from '../../core/validation';
 
 export class LoteRepository {
-  /** Entidade de domínio -> linha. O domínio referencia a organização pelo código; o banco, pela FK. */
   criar(db: Db, l: Lote, organizacaoId: string) {
     return db.lote.create({
       data: {
@@ -53,17 +52,11 @@ export class LoteRepository {
     return count;
   }
 
-  /**
-   * Trava a linha do lote (SELECT ... FOR UPDATE) até o fim da transação.
-   * Serializa operações que dependem do conjunto de equipamentos do lote
-   * (próxima posição e sincronização do status), evitando corrida entre requisições.
-   */
   async travar(db: Db, id: string): Promise<boolean> {
     const linhas = await db.$queryRaw<{ id: string }[]>`SELECT id FROM Lote WHERE id = ${id} FOR UPDATE`;
     return linhas.length > 0;
   }
 
-  /** Status derivado dos equipamentos (regra "todos iguais"). */
   definirStatus(db: Db, id: string, status: StatusEquipamento) {
     return db.lote.update({ where: { id }, data: { status, versao: { increment: 1 } } });
   }
@@ -72,7 +65,6 @@ export class LoteRepository {
     return db.lote.update({ where: { id }, data: { ativo, versao: { increment: 1 } } });
   }
 
-  /** Soft delete em cadeia: inativa todos os lotes ativos da organização. Retorna quantos foram inativados. */
   async inativarPorOrganizacao(db: Db, organizacaoId: string) {
     const { count } = await db.lote.updateMany({
       where: { organizacaoId, ativo: true },
@@ -82,6 +74,6 @@ export class LoteRepository {
   }
 
   remover(db: Db, id: string) {
-    return db.lote.delete({ where: { id } }); // equipamentos, histórico e movimentações caem em cascata
+    return db.lote.delete({ where: { id } });
   }
 }

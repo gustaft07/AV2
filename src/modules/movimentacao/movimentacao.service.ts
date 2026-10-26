@@ -14,7 +14,6 @@ export class MovimentacaoService {
     if (f.equipamentoId) where.equipamentoId = f.equipamentoId;
     if (f.tipo) where.tipo = f.tipo;
     if (f.ator) where.ator = f.ator;
-    // movimentações de equipamentos de lotes inativos ficam fora da consulta padrão
     const ativo = filtroAtivo(f.situacao);
     if (ativo !== undefined) where.equipamento = { lote: { ativo } };
 
